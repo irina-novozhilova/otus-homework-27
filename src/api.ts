@@ -1,4 +1,5 @@
-namespace ToDo {
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace ToDo {
   export interface CrudInterface<T> {
     create(data: T): Promise<T>;
     readMany(data: T): Promise<T[]>;
@@ -17,6 +18,7 @@ namespace ToDo {
   }
 
   export interface TodoItemData {
+    [index: string]: any;
     id?: number;
     name?: string;
     description?: string;
@@ -26,27 +28,15 @@ namespace ToDo {
   }
 
   export class Crud implements CrudInterface<TodoItemData> {
-    counter: number;
-    constructor() {
-      this.counter = this.getCounter() + 1;
-    }
-    getCounter(): number {
-      return parseInt(localStorage.getItem("todocounter"));
-    }
-    setCounter(): void {
-      localStorage.setItem("todocounter", String(this.counter));
-      this.counter++;
-    }
-
-    create(data: ToDo.TodoItemData): Promise<ToDo.TodoItem> {
-      let currentData: ToDo.TodoItemData = data;
-      currentData.id = this.counter;
+    create(data: ToDo.TodoItemData): Promise<ToDo.TodoItemData> {
+      const curId = Date.prototype.getMilliseconds();
+      const currentData: ToDo.TodoItemData = data;
+      currentData.id = curId;
       currentData.timestamp = Date.now();
       if (!currentData.status) {
         currentData.status = "создана";
       }
-      localStorage.setItem(String(this.counter), JSON.stringify(currentData));
-      this.setCounter();
+      localStorage.setItem(String(curId), JSON.stringify(currentData));
       return Promise.resolve(currentData);
     }
 
@@ -55,12 +45,15 @@ namespace ToDo {
       return Promise.resolve(undefined);
     }
 
-    readMany(data: ToDo.TodoItem): Promise<ToDo.TodoItem[]> {
-      let filteredToDo: object[] = [];
+    readMany(data: ToDo.TodoItemData): Promise<ToDo.TodoItemData[]> {
+      const filteredToDo: object[] = [];
       for (let item = 0; item < localStorage.length; item++) {
-        let key = localStorage.key(item);
+        const key = localStorage.key(item);
         let isGood = true;
-        let todoObj = JSON.parse(localStorage.getItem(key));
+        const todoObj: TodoItemData = JSON.parse(
+          String(localStorage.getItem(String(key)))
+        );
+        // eslint-disable-next-line no-restricted-syntax
         for (const property in data) {
           if (data[property] !== todoObj[property]) {
             isGood = false;
@@ -74,15 +67,19 @@ namespace ToDo {
       return Promise.resolve(filteredToDo);
     }
 
-    readOne(id: number): Promise<ToDo.TodoItem> {
-      let oneToDo: TodoItem = JSON.parse(localStorage.getItem(String(id)));
+    readOne(id: number): Promise<ToDo.TodoItemData> {
+      const oneToDo: TodoItemData = JSON.parse(
+        String(localStorage.getItem(String(id)))
+      );
       return Promise.resolve(oneToDo);
     }
 
-    update(id: number, data: ToDo.TodoItemData): Promise<ToDo.TodoItem> {
-      let updatedToDo: TodoItem = JSON.parse(localStorage.getItem(String(id)));
+    update(id: number, data: ToDo.TodoItemData): Promise<ToDo.TodoItemData> {
+      let updatedToDo: TodoItemData = JSON.parse(
+        String(localStorage.getItem(String(id)))
+      );
       updatedToDo = Object.assign(updatedToDo, data);
-      localStorage.setItem(String(this.counter), JSON.stringify(updatedToDo));
+      localStorage.setItem(String(id), JSON.stringify(updatedToDo));
       return Promise.resolve(updatedToDo);
     }
   }

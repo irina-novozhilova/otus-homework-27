@@ -28,6 +28,7 @@ module.exports = {
     "prefer-destructuring": ["error", { object: true, array: false }],
     "class-methods-use-this": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "no-plusplus": "off",
   },
   root: true,
   globals: {
