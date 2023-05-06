@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { ToDo } from "./api";
+import Crud = ToDo.Crud;
 
 const mSec = 1187076708000;
 const mSec2 = 1187076708010;
@@ -32,6 +33,7 @@ describe("ToDo", () => {
   beforeEach(() => {
     Date.prototype.getMilliseconds = jest.fn(() => mSec);
     Date.now = jest.fn(() => timestamp);
+    localStorage.clear();
   });
   it("api is instance of CrudInterface", () => {
     const api = new ToDo.Crud();
@@ -46,33 +48,48 @@ describe("ToDo", () => {
     expect(api.readMany).toBeInstanceOf(Function);
   });
 
-  it("create is successfully add an item", () => {
-    api.create(task);
+  it("create is successfully add an item", async () => {
+    await api.create(task);
     expect(localStorage.setItem).toHaveBeenCalledWith(
       "1187076708000",
       JSON.stringify(expectedTask)
     );
   });
 
-  it("update is successfully renew an item", () => {
+  it("update is successfully renew an item", async () => {
     const updatedTask: ToDo.TodoItemData = {
       status: "в работе",
     };
-    api.create(task);
-    api.update(mSec, updatedTask);
+    await api.create(task);
+    await api.update(mSec, updatedTask);
 
     const renewTask = JSON.parse(localStorage.__STORE__[mSec]);
 
     expect(renewTask.status).toStrictEqual("в работе");
   });
 
-  it("delete is successfully remove an item", () => {
-    api.create(task);
-    api.delete(mSec);
+  it("update return when element not found", async () => {
+    const updatedTask: ToDo.TodoItemData = {
+      status: "в работе",
+    };
+    const renewTask = await api.update(mSec + 2, updatedTask);
+
+    expect(renewTask).toStrictEqual(undefined);
+  });
+
+  it("delete is successfully remove an item", async () => {
+    await api.create(task);
+    await api.delete(mSec);
 
     const renewTask = localStorage.__STORE__[mSec];
 
     expect(renewTask).toStrictEqual(undefined);
+  });
+
+  it("readOne return undefined when error", async () => {
+    const readTask = await api.readOne(mSec + 3);
+
+    expect(readTask).toBeUndefined();
   });
 
   it("readOne is successfully get an item", async () => {
@@ -80,6 +97,17 @@ describe("ToDo", () => {
     const readTask = await api.readOne(mSec);
 
     expect(readTask).toStrictEqual(expectedTask);
+  });
+
+  it("readMany return empty array when error", async () => {
+    const filter: ToDo.TodoItemData = {
+      status: "в работе",
+    };
+    const apiLocal = new Crud();
+    localStorage.setItem("bug", "sdsfdsafdsafdsafdsaf");
+    const result = await apiLocal.readMany(filter);
+
+    expect(result).toStrictEqual([]);
   });
 
   it("readMany is successfully get an items", async () => {
