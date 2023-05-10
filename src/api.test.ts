@@ -1,10 +1,10 @@
 /* eslint-disable */
-import { ToDo } from "./api";
+import * as ToDo from "./api";
 import Crud = ToDo.Crud;
 
-const mSec = 1187076708000;
-const mSec2 = 1187076708010;
-const mSec3 = 1187076708020;
+const mSec = "1187076708000";
+const mSec2 = "1187076708010";
+const mSec3 = "1187076708020";
 const timestamp = 2287076708000;
 
 const task: ToDo.TodoItemData = {
@@ -24,23 +24,24 @@ const task3: ToDo.TodoItemData = {
 const expectedTask: ToDo.TodoItemData = {
   name: "Wake Up",
   id: mSec,
-  timestamp,
+  timestamp: timestamp,
+  user: "user1",
   status: "создана",
 };
-const api = new ToDo.Crud();
+const api = new ToDo.Crud("user1");
 
 describe("ToDo", () => {
   beforeEach(() => {
-    Date.prototype.getMilliseconds = jest.fn(() => mSec);
+    Date.prototype.getMilliseconds = jest.fn(() => parseInt(mSec));
     Date.now = jest.fn(() => timestamp);
     localStorage.clear();
   });
   it("api is instance of CrudInterface", () => {
-    const api = new ToDo.Crud();
+    const api = new ToDo.Crud("user1");
     expect(api).toBeInstanceOf(ToDo.Crud);
   });
   it("api has all functions", () => {
-    const api = new ToDo.Crud();
+    const api = new ToDo.Crud("user1");
     expect(api.create).toBeInstanceOf(Function);
     expect(api.update).toBeInstanceOf(Function);
     expect(api.delete).toBeInstanceOf(Function);
@@ -103,7 +104,7 @@ describe("ToDo", () => {
     const filter: ToDo.TodoItemData = {
       status: "в работе",
     };
-    const apiLocal = new Crud();
+    const apiLocal = new Crud("user1");
     localStorage.setItem("bug", "sdsfdsafdsafdsafdsaf");
     const result = await apiLocal.readMany(filter);
 
@@ -113,10 +114,10 @@ describe("ToDo", () => {
   it("readMany is successfully get an items", async () => {
     await api.create(task);
 
-    Date.prototype.getMilliseconds = jest.fn(() => mSec2);
+    Date.prototype.getMilliseconds = jest.fn(() => parseInt(mSec2));
     await api.create(task2);
 
-    Date.prototype.getMilliseconds = jest.fn(() => mSec3);
+    Date.prototype.getMilliseconds = jest.fn(() => parseInt(mSec3));
     await api.create(task3);
 
     const filter: ToDo.TodoItemData = {
