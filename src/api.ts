@@ -1,6 +1,6 @@
 export interface CrudInterface<T> {
   create(data: T): Promise<T>;
-  readMany(data: T): Promise<T[]>;
+  find(data: T): Promise<T[]>;
   readOne(id: string): Promise<T | undefined>;
   update(id: string, data: T): Promise<T | undefined>;
   delete(id: string): Promise<boolean>;
@@ -24,65 +24,66 @@ export class Crud implements CrudInterface<TodoItemData> {
     this.user = user;
   }
 
+  async readAll(): Promise<TodoItemData[]> {
+    try {
+      const result = JSON.parse(localStorage.getItem(this.user) as string);
+      return result || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   async create(data: TodoItemData): Promise<TodoItemData> {
+    const tasks = await this.readAll();
+
     const date = new Date();
     const curId = String(date.getMilliseconds());
-    const currentData: TodoItemData = data;
-    currentData.id = curId;
-    currentData.timestamp = Date.now();
-    currentData.user = this.user;
-    if (!currentData.status) {
-      currentData.status = "создана";
+    const todo: TodoItemData = data;
+    todo.id = curId;
+    todo.timestamp = Date.now();
+
+    if (!todo.status) {
+      todo.status = "создана";
     }
-    localStorage.setItem(curId, JSON.stringify(currentData));
-    return currentData;
+
+    tasks.push(todo);
+    localStorage.setItem(this.user, JSON.stringify(tasks));
+
+    return todo;
   }
 
   async delete(id: string): Promise<boolean> {
-    localStorage.removeItem(id);
-    return true;
+    const tasks = await this.readAll();
+    const result = tasks.filter((task) => task.id !== id);
+    localStorage.setItem(this.user, JSON.stringify(result));
+    return !!result;
   }
 
-  async readMany(data: TodoItemData): Promise<TodoItemData[]> {
-    const filteredToDo = [];
-    for (let item = 0; item < localStorage.length; item++) {
-      const key = localStorage.key(item);
-      const value = String(localStorage.getItem(String(key)));
-      try {
-        const todoObj: TodoItemData = JSON.parse(value);
-        filteredToDo.push(todoObj);
-      } catch (e) {
-        return [];
-      }
-    }
-    return filteredToDo.filter(
-      (todoItem) =>
-        !Object.keys(data).some((key) => data[key] !== todoItem[key])
+  async find(data: TodoItemData): Promise<TodoItemData[]> {
+    const tasks = await this.readAll();
+    return tasks.filter(
+      (task) => !Object.keys(data).some((key) => data[key] !== task[key])
     );
   }
 
   async readOne(id: string): Promise<TodoItemData | undefined> {
-    const item = localStorage.getItem(id);
-    const value = item || "";
-    try {
-      return JSON.parse(value);
-    } catch (e) {
-      return undefined;
-    }
+    const tasks = await this.readAll();
+    return tasks.filter((task) => task.id === id).pop();
   }
 
   async update(
     id: string,
     data: TodoItemData
   ): Promise<TodoItemData | undefined> {
-    const value = String(localStorage.getItem(id));
-    try {
-      let updatedToDo: TodoItemData = JSON.parse(value);
-      updatedToDo = Object.assign(updatedToDo, data);
-      localStorage.setItem(id, JSON.stringify(updatedToDo));
-      return updatedToDo;
-    } catch (e) {
-      return undefined;
-    }
+    const tasks = await this.readAll();
+    let updatedToDo;
+    tasks.forEach((task) => {
+      if (task.id === id) {
+        updatedToDo = Object.assign(task, data);
+        localStorage.setItem(this.user, JSON.stringify(tasks));
+      }
+    });
+
+    return updatedToDo;
   }
 }
